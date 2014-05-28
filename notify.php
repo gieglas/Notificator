@@ -22,6 +22,7 @@ Mustache_Autoloader::register();
 if (!_is_cli()) {
 	echo "This script can only be run from the command line";
 } else {		
+	error_reporting(E_ALL & ~E_NOTICE);
 	echo date("Y-m-d H:i:s"). "| -----------------------  Notificator Started ----------------------- \r\n";
 	$Data=array();		
 	global $notify_options;	
