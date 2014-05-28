@@ -1,10 +1,14 @@
 Notificator - Send email notifications
 ======
  
-@author      Constantinos Evangelou <gieglas@gmail.com>
+@author      Constantinos Evangelou 
+
 @copyright   2014 Constantinos Evangelou
+
 @link        http://gieglas.com
+
 @license     The MIT License (MIT)
+
 @version     1.0.0
 
 ## Description ##
