@@ -9,7 +9,7 @@ Notificator - Send email notifications
 
 @license     The MIT License (MIT)
 
-@version     1.0.0
+@version     1.0.1
 
 ## Description ##
  
@@ -34,13 +34,13 @@ It can connect to either Oracle, MySQL, Microsoft SQL Server, Sybase using PDO.
 
 **Note**
 Example of data_json:
-```PHP
+```JSON
 '[{"word":"watachikita"},{"word":"triskitsikitsikita"},{"word":"anginara"}]'
 ```
 
 **Note**
 Example template:
-```HTML
+```XML
 <!DOCTYPE html>
 	<head>
 	</head>	
@@ -92,8 +92,8 @@ $conn = new PDO($connStr,$myUser,$myPass);
 ##Basic Usage##
 1. The notificator table on the desired database can be populated by a 3rd party application or service. In order to send the notfication the new records must be marked with `status=0`. 
 2. Run the php from the command line. For example:
-```
- C:\php\php.exe  -f C:\code\notificator\notify.php 
+```DOS
+ C:\php\php.exe  -f C:\code\notificator\notify.php C:\code\notificator\config\config.php
 ```
 
 ##Config File##

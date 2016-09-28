@@ -7,86 +7,92 @@
   @copyright   2014 Constantinos Evangelou
   @link        http://gieglas.com
   @license     The MIT License (MIT)
-  @version     1.0.0
+  @version     1.0.1
  
  */
 
 /*must use some kind of scheduler e.g. windows schedule tasks 
 C:\xampp\php\php.exe -f C:\code\notificator\notify.php 
 */
-require_once 'config/config.php';
+//require_once 'config/config.php';
 require_once 'lib/swift/swift_required.php';
 require 'lib/Mustache/Autoloader.php';
 Mustache_Autoloader::register();
 
 if (!_is_cli()) {
 	echo "This script can only be run from the command line";
-} else {		
-	error_reporting(E_ALL & ~E_NOTICE);
-	echo date("Y-m-d H:i:s"). "| -----------------------  Notificator Started ----------------------- \r\n";
-	$Data=array();		
-	global $notify_options;	
-	try {				
-		// execute update status = 1
-		$execCommand = _exeCommand($notify_options["updatequerystatus1"],$notify_options["connection"],array(),"Array");
-		if ($execCommand["error"]) {
-			echo "----- ERROR ------ _exeCommand updatequerystatus1\r\n";
-			print_r($execCommand);
-			exit;
-		}		
-		//get the data from the database
-		$Data=_getData($notify_options["selectquery"],$notify_options["connection"],array(),"Array");				
-		if ($Data["error"]) {
-			echo "----- ERROR ------ _getData\r\n";
-			print_r($Data);
-			exit;
-		} else {
-			echo "----- Notifications to be sent ------ \r\n";
-			print_r($Data);
-		}
-		// declare mustache engine with a loader in folder "templates"
-		$m = new Mustache_Engine(array(
-				'loader' => new Mustache_Loader_FilesystemLoader(dirname(__FILE__) . '\templates'),
-			));
-		//for each entry in data
-		foreach ($Data as $res) {
-			echo "- Sending notification for record with id: ". $res["id"] ."\r\n";
-			// set params for specific record
-			$rec=new stdClass();
-			$rec->name='id';
-			$rec->value=$res["id"];
-			$params = array();
-			array_push($params,$rec);
-			//send email using the data in that row and the specified template			
-			$failedRecipients = _sendNotificationEmail($res,$m->render($res["template"],
-			json_decode((($notify_options["convertencoding"])? iconv($notify_options["in_charset"], $notify_options["out_charset"], $res["data_json"]) : $res["data_json"])) ));
-			if (count($failedRecipients) > 0) {
-				echo "----- ERROR ------ _sendNotificationEmail \r\n";
-				print_r($failedRecipients);
-				exit;
-			}			
-			// execute update status = 2
-			$execCommand = _exeCommand($notify_options["updatequerystatusid"],$notify_options["connection"],$params,"Array");
+} else {
+	if ($argc != 2) {
+		echo "This is a command line PHP script with 1 argument. \r\nPlease enter the config file as a first argument.";
+	} else {
+		//load configuration file
+		require_once $argv[1];
+		error_reporting(E_ALL & ~E_NOTICE);
+		echo date("Y-m-d H:i:s"). "| -----------------------  Notificator Started ----------------------- \r\n";
+		$Data=array();		
+		global $notify_options;	
+		try {				
+			// execute update status = 1
+			$execCommand = _exeCommand($notify_options["updatequerystatus1"],$notify_options["connection"],array(),"Array");
 			if ($execCommand["error"]) {
-				echo "----- ERROR ------ _exeCommand updatequerystatusid\r\n";
+				echo "----- ERROR ------ _exeCommand updatequerystatus1\r\n";
 				print_r($execCommand);
 				exit;
 			}		
-		}
-		
-	} catch(exception $e) { 
-		echo "----- ERROR ------ \r\n";
-		echo '{"error":"'. $e->getMessage() .'"}'; 
-		//set the status = 3 for all notifications that were not processed
-		$execCommand = _exeCommand($notify_options["updatequerystatus3"],$notify_options["connection"],$params,"Array");
-		if ($execCommand["error"]) {
-			echo "----- ERROR ------ _exeCommand updatequerystatus3\r\n";
-			print_r($execCommand);
-			exit;
+			//get the data from the database
+			$Data=_getData($notify_options["selectquery"],$notify_options["connection"],array(),"Array");				
+			if ($Data["error"]) {
+				echo "----- ERROR ------ _getData\r\n";
+				print_r($Data);
+				exit;
+			} else {
+				echo "----- Notifications to be sent ------ \r\n";
+				print_r($Data);
+			}
+			// declare mustache engine with a loader in folder "templates"
+			$m = new Mustache_Engine(array(
+					'loader' => new Mustache_Loader_FilesystemLoader(dirname(__FILE__) . '\templates'),
+				));
+			//for each entry in data
+			foreach ($Data as $res) {
+				echo "- Sending notification for record with id: ". $res["id"] ."\r\n";
+				// set params for specific record
+				$rec=new stdClass();
+				$rec->name='id';
+				$rec->value=$res["id"];
+				$params = array();
+				array_push($params,$rec);
+				//send email using the data in that row and the specified template			
+				$failedRecipients = _sendNotificationEmail($res,$m->render($res["template"],
+				json_decode((($notify_options["convertencoding"])? iconv($notify_options["in_charset"], $notify_options["out_charset"], $res["data_json"]) : $res["data_json"])) ));
+				if (count($failedRecipients) > 0) {
+					echo "----- ERROR ------ _sendNotificationEmail \r\n";
+					print_r($failedRecipients);
+					exit;
+				}			
+				// execute update status = 2
+				$execCommand = _exeCommand($notify_options["updatequerystatusid"],$notify_options["connection"],$params,"Array");
+				if ($execCommand["error"]) {
+					echo "----- ERROR ------ _exeCommand updatequerystatusid\r\n";
+					print_r($execCommand);
+					exit;
+				}		
+			}
+			
+		} catch(exception $e) { 
+			echo "----- ERROR ------ \r\n";
+			echo '{"error":"'. $e->getMessage() .'"}'; 
+			//set the status = 3 for all notifications that were not processed
+			$execCommand = _exeCommand($notify_options["updatequerystatus3"],$notify_options["connection"],$params,"Array");
+			if ($execCommand["error"]) {
+				echo "----- ERROR ------ _exeCommand updatequerystatus3\r\n";
+				print_r($execCommand);
+				exit;
+			}		
+		} finally {
+			echo date("Y-m-d H:i:s"). "| -----------------------  Notificator Finished ----------------------- \r\n";
 		}		
-	} finally {
-		echo date("Y-m-d H:i:s"). "| -----------------------  Notificator Finished ----------------------- \r\n";
-	}	
+	}
 }
 
 //-------------------------------------------------------------
